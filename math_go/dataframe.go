@@ -12,11 +12,11 @@ type Series []interface{}
 
 func NewSeries(s interface{}) Series {
 	if s := reflect.ValueOf(s); s.Kind() == reflect.Slice {
-		series := make([]interface{}, 0, s.Len())
+		series := make(Series, 0, s.Len())
 		for i := 0; i < s.Len(); i++ {
 			series = append(series, s.Index(i).Interface())
 		}
-		return (Series)(series)
+		return series
 	}
 	return nil
 }
@@ -100,7 +100,7 @@ func (s Series) Min() (float64, error) {
 }
 
 func (s Series) Agg(f func(x interface{}) interface{}) Series {
-	sCopy := make([]interface{}, 0, s.Len())
+	sCopy := make(Series, 0, s.Len())
 	for i := 0; i < s.Len(); i++ {
 		sCopy = append(sCopy, f(s.Index(i)))
 	}
@@ -116,13 +116,13 @@ func (s Series) Rolling(period int) Rolling {
 		return Rolling{}
 	}
 
-	r := make([]Series, 0)
+	r := make(Rolling, 0)
 	for i := 0; i < v.Len(); i++ {
 		slice := make([]interface{}, 0)
 		if period-(i+1) > 0 {
 			slice = nanFill(period - (i + 1))
 		}
-		for j := i; j > -1 && j > i-period; j-- {
+		for j := int(math.Max(0, float64(i-period+1))); j <= i; j++ {
 			slice = append(slice, v.Index(j).Interface())
 		}
 
@@ -199,9 +199,32 @@ func (r Rolling) Min() Series {
 }
 
 func (r Rolling) Agg(f func(x interface{}) interface{}) Series {
-	rCopy := make([]interface{}, 0, r.Len())
+	rCopy := make(Series, 0, r.Len())
 	for i := 0; i < r.Len(); i++ {
 		rCopy = append(rCopy, f(r.Index(i)))
 	}
 	return (Series)(rCopy)
+}
+
+type DataFrame []Series
+
+func NewDataFrame(x ...Series) DataFrame {
+	d := make(DataFrame, 0)
+	l := -1
+	for i := 0; i < len(x); i++ {
+		if x[i].Len() != l && l != -1 {
+			return nil
+		}
+		d = append(d, x[i])
+		l = x[i].Len()
+	}
+	return d
+}
+
+func (d *DataFrame) Agg(f func(x Series) interface{}) Series {
+	series := make(Series, 0, d.Len())
+	for i := 0; i < d.Len(); i++ {
+		series = append(series, f(d.Row(i)))
+	}
+	return series
 }
