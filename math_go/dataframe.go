@@ -120,7 +120,7 @@ func (s Series) Rolling(period int) Rolling {
 	for i := 0; i < v.Len(); i++ {
 		slice := make([]interface{}, 0)
 		if period-(i+1) > 0 {
-			slice = nanFill(period - (i + 1))
+			slice = Full(period-(i+1), nil)
 		}
 		for j := int(math.Max(0, float64(i-period+1))); j <= i; j++ {
 			slice = append(slice, v.Index(j).Interface())
