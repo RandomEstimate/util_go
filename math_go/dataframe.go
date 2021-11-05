@@ -37,6 +37,22 @@ func (s Series) Mean() (float64, error) {
 
 }
 
+func (s Series) Sum() (float64, error) {
+
+	sum := 0.
+	for i := 0; i < s.Len(); i++ {
+		switch reflect.ValueOf(s.Index(i)).Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint,
+			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64:
+			sum += common.ParamSlice(strconv.ParseFloat(fmt.Sprint(s.Index(i)), 64))[0].(float64)
+		default:
+			return 0, fmt.Errorf("type error %v ", reflect.ValueOf(s.Index(i)).Kind())
+		}
+	}
+	return sum, nil
+
+}
+
 func (s Series) Var() (float64, error) {
 	sum2 := 0.
 	sum := 0.
