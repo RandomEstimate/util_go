@@ -222,19 +222,31 @@ func (r Rolling) Agg(f func(x interface{}) interface{}) Series {
 	return (Series)(rCopy)
 }
 
-type DataFrame []Series
+//type DataFrame []Series
+type DataFrame struct {
+	Data   []Series
+	Column []string
+}
 
 func NewDataFrame(x ...Series) DataFrame {
-	d := make(DataFrame, 0)
+	d := make([]Series, 0)
 	l := -1
 	for i := 0; i < len(x); i++ {
 		if x[i].Len() != l && l != -1 {
-			return nil
+			return DataFrame{}
 		}
 		d = append(d, x[i])
 		l = x[i].Len()
 	}
-	return d
+
+	col := make([]string, 0)
+	for i := 0; i < len(d); i++ {
+		col = append(col, fmt.Sprint(i))
+	}
+	return DataFrame{
+		Data:   d,
+		Column: col,
+	}
 }
 
 func (d *DataFrame) Agg(f func(x Series) interface{}) Series {
